@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cost Allocation Workbench · 成本分摊工作台</title>
+<link rel="stylesheet" href="src/style.css" />
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>成本分摊工作台</h1>
+    <p class="meta">台账 × 人数占比 → 成本中心自动分摊 · 报错自助修正 · 纯前端，文件不离开浏览器
+      <span class="badge">演示数据为虚构</span><span id="host-badge" class="badge host" hidden></span></p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="run">分摊</button>
+    <button class="tab" data-tab="playbook">处理规范</button>
+  </nav>
+
+  <section id="tab-run">
+    <div class="steps">
+      <span class="step on">① 上传</span><span class="step" id="st-check">② 校验</span>
+      <span class="step" id="st-alloc">③ 分摊</span><span class="step" id="st-dl">④ 下载</span>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>台账 <small>invoice_id, entity, country, cost_type, amount, currency</small></h3>
+        <input type="file" id="f-ledger" accept=".csv" />
+        <div class="row">
+          <button class="ghost" data-sample="clean">载入正常样例</button>
+          <button class="ghost" data-sample="dirty">载入含错误样例</button>
+        </div>
+        <div class="fileinfo" id="i-ledger">未选择文件</div>
+      </div>
+      <div class="card">
+        <h3>人数表 <small>entity, cost_center, headcount</small></h3>
+        <input type="file" id="f-headcount" accept=".csv" />
+        <div class="row"><button class="ghost" data-sample="headcount">载入人数样例</button></div>
+        <div class="fileinfo" id="i-headcount">未选择文件</div>
+      </div>
+    </div>
+    <div class="row"><button id="btn-run" class="primary" disabled>开始校验并分摊</button></div>
+
+    <div id="result" hidden>
+      <div class="grid4" id="kpis"></div>
+      <div class="card" id="issues-card" hidden>
+        <h3>校验结果</h3>
+        <table><thead><tr><th>代码</th><th>级别</th><th>行号</th><th>说明</th><th></th></tr></thead><tbody id="issues"></tbody></table>
+      </div>
+      <div class="card" id="summary-card" hidden>
+        <div class="row between"><h3>按成本中心汇总</h3>
+          <div><button class="ghost" id="dl-summary">下载汇总 CSV</button> <button class="primary" id="dl-lines">下载明细 CSV</button></div></div>
+        <table><thead><tr><th>主体</th><th>成本中心</th><th>币种</th><th class="num">发票数</th><th class="num">分摊金额</th><th>占比</th></tr></thead><tbody id="summary"></tbody></table>
+      </div>
+      <div class="card" id="lines-card" hidden>
+        <h3>分摊明细 <small id="lines-note"></small></h3>
+        <div class="scroll"><table><thead><tr><th>发票</th><th>主体</th><th>费用类型</th><th>成本中心</th><th class="num">人数</th><th class="num">占比</th><th class="num">金额</th><th>币种</th></tr></thead><tbody id="lines"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-playbook" hidden>
+    <p class="meta">每条报错按 <strong>①报错 → ②检查 → ③修改 → ④上传</strong> 四步处理。页面报错与这里的代码一一对应。</p>
+    <div id="playbook"></div>
+  </section>
+
+  <footer>报错规则见 <code>src/allocate.js</code> · 处理规范见 <code>src/playbook.js</code> · <a href="tests.html">运行测试</a></footer>
+</div>
+<script src="src/allocate.js"></script>
+<script src="src/playbook.js"></script>
+<script src="src/samples.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

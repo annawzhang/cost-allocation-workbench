@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>分摊引擎测试</title>
+<style>
+  body { font-family:-apple-system,"PingFang SC",sans-serif; padding:24px; }
+  li.pass { color:#16a34a; } li.fail { color:#dc2626; font-weight:600; }
+  #summary { font-size:1.1rem; font-weight:700; }
+</style>
+</head>
+<body>
+<h1>分摊引擎测试</h1>
+<div id="summary"></div>
+<ul id="out"></ul>
+<script src="src/allocate.js"></script>
+<script src="src/samples.js"></script>
+<script>
+  const results = [];
+  function test(name, fn) {
+    try { fn(); results.push([name, true]); }
+    catch (e) { results.push([name + " — " + e.message, false]); }
+  }
+  function eq(a, b) { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`期望 ${JSON.stringify(b)}，实际 ${JSON.stringify(a)}`); }
+  const codes = (issues) => issues.map((i) => i.code).sort();
+  const P = Alloc.parseCSV;
+
+  test("CSV 解析支持引号内逗号与 BOM", () => {
+    const r = P('\uFEFFa,b\n"1,2",x\n');
+    eq(r.header, ["a", "b"]);
+    eq(r.records[0].a, "1,2");
+  });
+
+  test("最大余数法：拆分合计等于原金额", () => {
+    const parts = Alloc.splitCents(100, [1, 1, 1]);
+    eq(parts.reduce((a, b) => a + b, 0), 100);
+    eq(parts, [34, 33, 33]);
+  });
+
+  test("负数金额按同样比例冲销", () => {
+    eq(Alloc.splitCents(-100, [1, 1, 1]), [-34, -33, -33]);
+  });
+
+  test("正常样例零错误，且每张发票拆分合计与原金额一致", () => {
+    const res = Alloc.allocate(P(SAMPLES.clean), P(SAMPLES.headcount));
+    eq(res.issues.filter((i) => i.level === "error").length, 0);
+    const byInvoice = {};
+    res.lines.forEach((l) => { byInvoice[l.invoice_id] = (byInvoice[l.invoice_id] || 0) + Math.round(l.amount * 100); });
+    P(SAMPLES.clean).records.forEach((r) => eq(byInvoice[r.invoice_id], Math.round(r.amount * 100)));
+  });
+
+  test("含错误样例识别出全部预埋问题", () => {
+    const issues = Alloc.validate(P(SAMPLES.dirty), P(SAMPLES.headcount));
+    eq(codes(issues), ["S1", "S2", "S5", "S6", "S7", "S8"]);
+  });
+
+  test("存在阻断错误时不产出分摊结果", () => {
+    const res = Alloc.allocate(P(SAMPLES.dirty), P(SAMPLES.headcount));
+    eq(res.lines.length, 0);
+  });
+
+  test("缺列直接报 E1，不再逐行校验", () => {
+    const issues = Alloc.validate(P("invoice_id,amount\nA,1"), P(SAMPLES.headcount));
+    eq(codes(issues), ["E1"]);
+  });
+
+  test("主体人数合计为 0 报 S3，小数人数报 S4", () => {
+    const hc = P("entity,cost_center,headcount\nX1,CC1,0\nX1,CC2,0\nY1,CC3,1.5");
+    eq(codes(Alloc.validate(P("invoice_id,entity,country,cost_type,amount,currency\nA,X1,US,T,10,USD"), hc)), ["S3", "S4"]);
+  });
+
+  test("人数为 0 的成本中心不分摊", () => {
+    const hc = P("entity,cost_center,headcount\nX1,CC1,0\nX1,CC2,4");
+    const res = Alloc.allocate(P("invoice_id,entity,country,cost_type,amount,currency\nA,X1,US,T,10,USD"), hc);
+    eq(res.lines.map((l) => [l.cost_center, l.amount]), [["CC2", "10.00"]]);
+  });
+
+  const passed = results.filter((r) => r[1]).length;
+  document.getElementById("summary").textContent = `${passed} / ${results.length} 通过`;
+  document.getElementById("out").innerHTML = results.map(([n, ok]) => `<li class="${ok ? "pass" : "fail"}">${ok ? "✓" : "✗"} ${n}</li>`).join("");
+  document.title = `${passed}/${results.length} passed`;
+</script>
+</body>
+</html>
