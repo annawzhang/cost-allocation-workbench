@@ -2,6 +2,11 @@
 
 **把「每月手工拆台账」变成上传两张表、一键分摊、报错自己会改的自助工具。**
 
+
+> **Copyright © 2026 张文婧 (Anna Zhang)** · [MIT License](./LICENSE) · [github.com/annawzhang](https://github.com/annawzhang)  
+> 欢迎学习与面试查阅；保留版权与许可声明。**禁止删除作者信息后冒充本人作品二次发表。** 公开内容为虚构/脱敏演示数据。
+
+
 [在线演示](https://annawzhang.github.io/cost-allocation-workbench/) · [运行测试](https://annawzhang.github.io/cost-allocation-workbench/tests.html)
 
 共享服务中心每月要把供应商发票（台账）按各法人主体下成本中心的人数占比拆分入账。
